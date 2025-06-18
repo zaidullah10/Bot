@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Binary Candle Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding-top: 100px;
+    }
+    h2 {
+      font-size: 28px;
+      color: #38bdf8;
+    }
+    #signal {
+      font-size: 32px;
+      margin-top: 40px;
+      font-weight: bold;
+      color: #facc15;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 Binary Options Signal Bot</h2>
+  <div id="signal">Loading...</div>
+
+  <script>
+    // Sample candle data
+    let candles = [
+      { open: 1.1200, high: 1.1220, low: 1.1180, close: 1.1210 },
+      { open: 1.1210, high: 1.1230, low: 1.1195, close: 1.1190 },
+      { open: 1.1190, high: 1.1205, low: 1.1175, close: 1.1205 },
+      { open: 1.1205, high: 1.1240, low: 1.1195, close: 1.1230 },
+      { open: 1.1230, high: 1.1245, low: 1.1210, close: 1.1225 }
+    ];
+
+    function getEMA(data, period) {
+      let k = 2 / (period + 1);
+      let ema = [data[0]];
+      for (let i = 1; i < data.length; i++) {
+        ema.push(data[i] * k + ema[i - 1] * (1 - k));
+      }
+      return ema;
+    }
+
+    function getRSI(closes, period = 14) {
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        let diff = closes[i] - closes[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses -= diff;
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      let rs = avgGain / avgLoss;
+      return 100 - (100 / (1 + rs));
+    }
+
+    function analyze(candles) {
+      let closes = candles.map(c => c.close);
+      let ema50 = getEMA(closes.slice(-50), 50).pop();
+      let ema20 = getEMA(closes.slice(-20), 20).pop();
+      let rsi = getRSI(closes.slice(-15), 14);
+
+      let last = candles[candles.length - 1];
+      let isBull = last.close > last.open;
+      let isBear = last.close < last.open;
+
+      if (ema20 > ema50 && rsi < 35 && isBull) return "CALL 📈";
+      if (ema20 < ema50 && rsi > 65 && isBear) return "PUT 📉";
+      return "NO SIGNAL";
+    }
+
+    const result = analyze(candles);
+    document.getElementById("signal").innerText = "Current Signal: " + result;
+  </script>
+</body>
+</html>
